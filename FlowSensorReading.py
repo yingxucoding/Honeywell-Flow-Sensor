@@ -59,6 +59,7 @@ ser.port = ask_for_port()
 print ("Opening port")
 ser.close()
 ser.open()
+
 print ("Ready to use")    
 #serial.Serial.close()
 #serial_port = serial.Serial.(port1)
@@ -72,20 +73,23 @@ ydata = []
 yrange = [-0.1,50]
 view_time = 15 # seconds of data to view at once
 """
-# ser.reset_input_buffer()
+ser.reset_input_buffer()
 
 class Monitor(object):
     """  This is supposed to be the class that will capture the data from
         whatever you are doing.
     """    
     def __init__(self,N):
-        self._t    = linspace(0,300,N)
+        self._t    = linspace(0,300,N)*0.2
         self._data = self._t*0
 
     def captureNewDataPoint(self):
         """  The function that should be modified to capture the data
             according to your needs
-        """ 
+        """
+#        if ser.in_waiting > 0:
+#        ser.reset_input_buffer()
+        ser.flushInput()
         return float(ser.readline().decode('utf-8').split(' ')[0].strip('\r\n'))
         #return 0.01
 
@@ -93,7 +97,10 @@ class Monitor(object):
     def updataData(self):
         while True:
             self._data[:]  = roll(self._data,-1)
-            self._data[-1] = self.captureNewDataPoint()
+            try:
+                self._data[-1] = self.captureNewDataPoint()
+            except ValueError:
+                self._data[-1] = self._data[-2]
             yield self._data
 
 class StreamingDisplay(object):
@@ -124,8 +131,8 @@ if __name__ == '__main__':
     m = Monitor(300)
     sd = StreamingDisplay()
     sd.plot(m)
-    sd.set_lims((0,300),(-0.1,30))
-    sd.set_labels('Time, 0.1sec', 'Flow rate, SLPM', 'Flow sensor reading')
+    sd.set_lims((0,300*0.2),(-0.1,30))
+    sd.set_labels('Time, sec', 'Flow rate, SLPM', 'Flow sensor reading')
     ani = animation.FuncAnimation(sd._fig, sd.update, m.updataData, interval=10) # interval is in ms
     plt.grid()
     plt.show()
